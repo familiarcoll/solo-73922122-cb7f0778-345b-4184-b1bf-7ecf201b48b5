@@ -1,0 +1,27 @@
+# Two independent API processes (api1 on :8000, api2 on :8001) share one
+# SQLite database file through the `msdata` volume. Ingest on one port and
+# query on the other to see the shared committed state; kill both and start
+# again to see the persisted index survive restarts.
+services:
+  api1:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      MS_DB_PATH: /data/spectra.db
+      # Slow rebuilds down to make "ingest/query while rebuilding" visible:
+      # MS_REBUILD_BATCH_DELAY_MS: "50"
+    volumes:
+      - msdata:/data
+
+  api2:
+    build: .
+    ports:
+      - "8001:8000"
+    environment:
+      MS_DB_PATH: /data/spectra.db
+    volumes:
+      - msdata:/data
+
+volumes:
+  msdata:
